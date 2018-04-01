@@ -1,10 +1,10 @@
-// SPDX-License-Identifier: GPL-2.0
 #include "qcom-msm8974.dtsi"
 #include "qcom-pm8841.dtsi"
 #include "qcom-pm8941.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/clock/qcom,mmcc-msm8974.h>
 
 / {
 	model = "Sony Xperia Z1 Compact";
@@ -257,6 +257,20 @@
 			};
 		};
 	};
+
+        vreg_vsp: lcd-dcdc-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "vreg_vsp";
+                regulator-min-microvolt = <5600000>;
+                regulator-max-microvolt = <5600000>;
+
+                gpio = <&msmgpio 58 GPIO_ACTIVE_HIGH>;
+                enable-active-high;
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&lcd_en_pin_a>;
+                pinctrl-1 = <&lcd_en_pin_s>;
+        };
 };
 
 &soc {
@@ -359,6 +373,31 @@
 				bias-pull-up;
 			};
 		};
+
+                lcd_en_pin_a: lcd-en-active {
+			pins = "gpio58";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+			output-high;
+		};
+
+		lcd_en_pin_s: lcd-en-suspend {
+			pins = "gpio58";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+			input-enable;
+                };
+                /*panel_pin: panel*/
+			/*te {*/
+				/*pins = "gpio12";*/
+				/*function = "mdp_vsync";*/
+
+				/*drive-strength = <2>;*/
+				/*bias-disable;*/
+                        /*};*/
+                /*};*/
 	};
 
 	dma-controller@f9944000 {
@@ -389,6 +428,232 @@
 			};
 		};
 	};
+
+        mdss: mdss@fd900000 {
+            compatible = "qcom,mdss";
+            reg = <0xfd900000 0x100>,
+                  <0xfd924000 0x1000>;
+            reg-names = "mdss_phys", "vbif_phys";
+
+            power-domains = <&mmcc MDSS_GDSC>;
+            vdd-supply = <&pm8941_lvs3>;
+
+            clocks = <&mmcc MDSS_AHB_CLK>,
+                 <&mmcc MDSS_AXI_CLK>,
+                 <&mmcc MDSS_VSYNC_CLK>;
+            clock-names = "iface",
+                      "bus",
+                      "vsync";
+
+            interrupts = <GIC_SPI 72 0>;
+
+            interrupt-controller;
+            #interrupt-cells = <1>;
+
+            #address-cells = <1>;
+            #size-cells = <1>;
+            ranges;
+
+            mdp: mdp@fd900000 {
+                compatible = "qcom,mdp5";
+                reg = <0xfd900100 0x22000>;
+                reg-names = "mdp_phys";
+
+                interrupt-parent = <&mdss>;
+                interrupts = <0 0>;
+
+                clocks = <&mmcc MDSS_AHB_CLK>,
+                     <&mmcc MDSS_AXI_CLK>,
+                     <&mmcc MDSS_MDP_CLK>,
+                     <&mmcc MDSS_VSYNC_CLK>;
+                clock-names = "iface",
+                          "bus",
+                          "core",
+                          "vsync";
+
+                            // iommus = <&mdp_iommu 0>;
+
+                ports {
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+
+                    /*port@0 {*/
+                                            /*reg = <0>;*/
+                                            /*[>mdp5_intf3_out: endpoint {<]*/
+                                                    /*[>remote-endpoint = <&hdmi_in>;<]*/
+                                            /*[>};<]*/
+                                    /*};*/
+
+                    port@1 {
+                        reg = <1>;
+                        mdp5_intf1_out: endpoint {
+                            remote-endpoint = <&dsi0_in>;
+                        };
+                    };
+                };
+            };
+
+            dsi0: dsi@fd922800 {
+                compatible = "qcom,mdss-dsi-ctrl";
+                reg = <0xfd922800 0x1f8>;
+                reg-names = "dsi_ctrl";
+
+                interrupt-parent = <&mdss>;
+                interrupts = <4 0>;
+
+                assigned-clocks =
+                         <&mmcc BYTE0_CLK_SRC>,
+                         <&mmcc PCLK0_CLK_SRC>;
+                assigned-clock-parents =
+                         <&dsi_phy0 0>,
+                         <&dsi_phy0 1>;
+
+                clocks = <&mmcc MDSS_MDP_CLK>,
+                                             <&mmcc MDSS_AHB_CLK>,
+                                             <&mmcc MDSS_AXI_CLK>,
+                                             <&mmcc MDSS_BYTE0_CLK>,
+                                             <&mmcc MDSS_PCLK0_CLK>,
+                                             <&mmcc MDSS_ESC0_CLK>,
+                                             <&mmcc MMSS_MISC_AHB_CLK>,
+                                             <&mmcc MMSS_S0_AXI_CLK>,
+                                             <&mmcc MMSS_MMSSNOC_AXI_CLK>;
+                clock-names = "mdp_core",
+                          "iface",
+                          "bus",
+                          "byte",
+                          "pixel",
+                          "core",
+                          "core_mmss",
+                          "s0_axi",
+                          "mmssnoc";
+
+                phys = <&dsi_phy0>;
+                phy-names ="dsi-phy";
+
+                vdda-supply = <&pm8941_l2>;
+                vdd-supply = <&pm8941_lvs3>;
+                /*vddio-supply = <&pm8941_l12>;*/
+
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                ports {
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+
+                    port@0 {
+                        reg = <0>;
+                        dsi0_in: endpoint {
+                            remote-endpoint = <&mdp5_intf1_out>;
+                        };
+                    };
+
+                    port@1 {
+                        reg = <1>;
+                        dsi0_out: endpoint {
+                            remote-endpoint = <&panel_in>;
+                            data-lanes = <0 1 2 3>;
+                        };
+                    };
+                };
+
+                /*panel: panel@0 {*/
+                    /*reg = <0>;*/
+                    /*compatible = "jdi,1080p";*/
+
+                    /*// backlight?, reset?, enable?*/
+
+                    /*disp-te-gpios = <&msmgpio 12 0>;*/
+
+                    /*pinctrl-names = "default";*/
+                    /*pinctrl-0 = <&panel_pin>;*/
+
+                    /*port {*/
+                        /*panel_in: endpoint {*/
+                            /*remote-endpoint = <&dsi0_out>;*/
+                        /*};*/
+                    /*};*/
+                /*};*/
+                /*#########################################*/
+                panel: panel@0 {
+                        compatible = "auo,novatek-720p-vid";
+
+                        reg = <0>;
+                        /*vsp-supply = <&vreg_vsp>;*/
+                        vdd-supply = <&pm8941_lvs3>;
+                        vdda-supply = <&pm8941_l2>;
+                        vsp-supply = <&vreg_vsp>;
+                        /*vddio-supply = <&pm8941_l12>;*/
+                        /*enable-gpios = <&msmgpio 58 GPIO_ACTIVE_HIGH>;*/
+                        te-gpios = <&msmgpio 12 0>;
+                        reset-gpios = <&pm8941_gpios 19 GPIO_ACTIVE_HIGH>;
+                        backlight = <&wled>;
+
+                        /*pinctrl-names = "default";*/
+                        /*pinctrl-0 = <&panel_pin>;*/
+
+                        ports {
+                                panel_in: endpoint {
+                                        remote-endpoint = <&dsi0_out>;
+                                };
+                        };
+                };
+            };
+        };
+
+            dsi_phy0: dsi-phy@fd922a00 {
+                compatible = "qcom,dsi-phy-28nm-hpm";
+                qcom,dsi-phy-index = <0>;
+                reg-names =
+                    "dsi_pll",
+                    "dsi_phy",
+                    "dsi_phy_regulator";
+                reg = <0xfd922a00 0xd4>,
+                      <0xfd922b00 0x280>,
+                      <0xfd922d80 0x30>;
+
+                #clock-cells = <1>;
+
+                clocks = <&mmcc MDSS_AHB_CLK>;
+                clock-names = "iface";
+
+                /*vddio-supply = <&pm8941_l12>;*/
+
+                #phy-cells = <0>;
+        };
+
+	/*mdss@fd900000 {*/
+		/*status = "ok";*/
+
+		/*dsi@fd922800 {*/
+			/*ports {*/
+				/*port@1 {*/
+					/*dsi0_out: endpoint {*/
+						/*remote-endpoint = <&panel_in>;*/
+						/*data-lanes = <0 1 2 3>;*/
+					/*};*/
+				/*};*/
+			/*};*/
+
+			/*panel@0 {*/
+				/*compatible = "auo,novatek-720p-vid";*/
+
+				/*reg = <0>;*/
+				/*[>power-supply = <&vreg_vsp>;<]*/
+                                /*vdd-supply = <&pm8941_lvs3>;*/
+                                /*vddio-supply = <&pm8941_l12>;*/
+                                /*enable-gpios = <&msmgpio 58 GPIO_ACTIVE_HIGH>;*/
+				/*reset-gpios = <&pm8941_gpios 19 GPIO_ACTIVE_HIGH>;*/
+				/*backlight = <&wled>;*/
+
+				/*ports {*/
+					/*panel_in: endpoint {*/
+						/*remote-endpoint = <&dsi0_out>;*/
+					/*};*/
+				/*};*/
+			/*};*/
+		/*};*/
+	/*};*/
 };
 
 &spmi_bus {
@@ -412,6 +677,27 @@
 				bias-pull-up;
 				power-source = <PM8941_GPIO_S3>;
 			};
+
+			lcd_dcdc_en_pin_a: lcd-dcdc-en-active {
+				pins = "gpio20";
+				function = "normal";
+
+				bias-disable;
+				power-source = <PM8941_GPIO_S3>;
+				input-disable;
+				output-low;
+			};
+
+			lcd_dcdc_reset_pin_a: lcd-dcdc-reset {
+				active {
+					pins = "gpio19";
+					function = "normal";
+
+					power-source = <PM8941_GPIO_S3>;
+					input-disable;
+					output-low;
+				};
+			};
 		};
 
 		coincell@2800 {
@@ -422,7 +708,7 @@
 	};
 
 	pm8941@1 {
-		wled@d800 {
+		wled: wled@d800 {
 			status = "ok";
 
 			qcom,cs-out;
@@ -432,5 +718,6 @@
 			qcom,ovp = <29>;
 			qcom,num-strings = <2>;
 		};
-	};
+        };
+
 };
