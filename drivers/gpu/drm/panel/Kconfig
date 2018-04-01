@@ -158,4 +158,22 @@ config DRM_PANEL_SITRONIX_ST7789V
 	  Say Y here if you want to enable support for the Sitronix
 	  ST7789V controller for 240x320 LCD panels
 
+config DRM_PANEL_AUO_NOVATEK_720P
+	tristate "AUO Novatek 720p panel"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Say Y here if you want to enable support for AUO 720p DSI panel
+	  as found in some Sony XPERIA Z1 compact devices
+
+config DRM_PANEL_JDI_NOVATEK_720P
+	tristate "JDI Novatek 720p panel"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Say Y here if you want to enable support for JDI 720p DSI panel
+	  as found in some Sony XPERIA Z1 compact devices
+
 endmenu
