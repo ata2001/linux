@@ -116,6 +116,8 @@ struct msm_dsi_host {
 	struct clk *byte_clk_src;
 	struct clk *pixel_clk_src;
 	struct clk *byte_intf_clk;
+        struct clk *s0_axi_clk;
+        struct clk *mmssnoc_clk;
 
 	u32 byte_clk_rate;
 	u32 pixel_clk_rate;
@@ -444,6 +446,47 @@ static int dsi_clk_init(struct msm_dsi_host *msm_host)
 
 	if (cfg_hnd->ops->clk_init_ver)
 		ret = cfg_hnd->ops->clk_init_ver(msm_host);
+        msm_host->s0_axi_clk = msm_clk_get(pdev, "s0_axi");
+	if (IS_ERR(msm_host->s0_axi_clk)) {
+		ret = PTR_ERR(msm_host->s0_axi_clk);
+		pr_debug("%s: can't find s0_axi clock. ret=%d\n",
+			 __func__, ret);
+		msm_host-> s0_axi_clk = NULL;
+	}
+
+        msm_host->mmssnoc_clk = msm_clk_get(pdev, "mmssnoc");
+	if (IS_ERR(msm_host->mmssnoc_clk)) {
+		ret = PTR_ERR(msm_host->mmssnoc_clk);
+		pr_debug("%s: can't find mmssnoc clock. ret=%d\n",
+			 __func__, ret);
+		msm_host-> mmssnoc_clk = NULL;
+	}
+
+	if (cfg_hnd->major == MSM_DSI_VER_MAJOR_V2) {
+		msm_host->src_clk = msm_clk_get(pdev, "src");
+		if (IS_ERR(msm_host->src_clk)) {
+			ret = PTR_ERR(msm_host->src_clk);
+			pr_err("%s: can't find src clock. ret=%d\n",
+				__func__, ret);
+			msm_host->src_clk = NULL;
+			goto exit;
+		}
+
+		msm_host->esc_clk_src = clk_get_parent(msm_host->esc_clk);
+		if (!msm_host->esc_clk_src) {
+			ret = -ENODEV;
+			pr_err("%s: can't get esc clock parent. ret=%d\n",
+				__func__, ret);
+			goto exit;
+		}
+
+		msm_host->dsi_clk_src = clk_get_parent(msm_host->src_clk);
+		if (!msm_host->dsi_clk_src) {
+			ret = -ENODEV;
+			pr_err("%s: can't get src clock parent. ret=%d\n",
+				__func__, ret);
+		}
+	}
 exit:
 	return ret;
 }
@@ -538,6 +581,17 @@ int dsi_link_clk_enable_6g(struct msm_dsi_host *msm_host)
 			       __func__, ret);
 			goto error;
 		}
+        }
+	ret = clk_set_rate(msm_host->s0_axi_clk, 100000000);
+	if (ret) {
+		pr_err("%s: Failed to set rate s0_axi clk, %d\n", __func__, ret);
+		goto error;
+	}
+
+	ret = clk_set_rate(msm_host->mmssnoc_clk, 100000000);
+	if (ret) {
+		pr_err("%s: Failed to set rate mmssnoc clk, %d\n", __func__, ret);
+		goto error;
 	}
 
 	ret = clk_prepare_enable(msm_host->esc_clk);
@@ -565,6 +619,17 @@ int dsi_link_clk_enable_6g(struct msm_dsi_host *msm_host)
 			       __func__);
 			goto byte_intf_clk_err;
 		}
+        }
+	ret = clk_set_rate(msm_host->s0_axi_clk, 100000000);
+	if (ret) {
+		pr_err("%s: Failed to set rate s0_axi clk, %d\n", __func__, ret);
+		goto error;
+	}
+
+	ret = clk_set_rate(msm_host->mmssnoc_clk, 100000000);
+	if (ret) {
+		pr_err("%s: Failed to set rate mmssnoc clk, %d\n", __func__, ret);
+		goto error;
 	}
 
 	return 0;
