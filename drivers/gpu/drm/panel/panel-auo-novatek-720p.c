@@ -30,7 +30,8 @@
 
 static const char *regulator_names[] = {
 	"vdd",
-	"vdda"
+	"vdda",
+        "vsp"
 };
 
 struct auo_panel {
@@ -39,7 +40,7 @@ struct auo_panel {
 
 	struct backlight_device *backlight;
 	struct regulator_bulk_data supplies[ARRAY_SIZE(regulator_names)];
-	struct gpio_desc *enable_gpio;
+	/*struct gpio_desc *enable_gpio;*/
 	struct gpio_desc *te_gpio;
 	struct gpio_desc *reset_gpio;
 
@@ -2067,8 +2068,8 @@ static int auo_panel_unprepare(struct drm_panel *panel)
 		return ret;
 	}
 
-	if (auo->enable_gpio)
-		gpiod_set_value(auo->enable_gpio, 0);
+	/*if (auo->enable_gpio)*/
+		/*gpiod_set_value(auo->enable_gpio, 0);*/
 
 	if (auo->reset_gpio)
 		gpiod_set_value(auo->reset_gpio, 0);
@@ -2088,15 +2089,16 @@ static int auo_panel_prepare(struct drm_panel *panel)
 
 	DRM_DEBUG("prepare\n");
 
-	if (auo->reset_gpio) {
-		gpiod_set_value(auo->reset_gpio, 0);
-		msleep(5);
-	}
+	/*if (auo->reset_gpio) {*/
+		/*gpiod_set_value(auo->reset_gpio, 0);*/
+		/*msleep(5);*/
+	/*}*/
 
 	/*ret = regulator_enable(auo->supply);*/
 	/*if (ret < 0)*/
 		/*return ret;*/
 
+        msleep(200);
 	ret = regulator_bulk_enable(ARRAY_SIZE(auo->supplies),
 				      auo->supplies);
 	if (ret < 0) {
@@ -2106,24 +2108,27 @@ static int auo_panel_prepare(struct drm_panel *panel)
                 printk("regulators successfully enabled!!!");
         }
 
-	msleep(20);
+	msleep(10);
 
-	if (auo->enable_gpio) {
-	    gpiod_set_value(auo->enable_gpio, 1);
-	    usleep_range(10, 20);
-	}
+	/*if (auo->enable_gpio) {*/
+	    /*gpiod_set_value(auo->enable_gpio, 1);*/
+	    /*usleep_range(10, 20);*/
+	/*}*/
 
-	if (auo->te_gpio) {
-	    gpiod_set_value(auo->te_gpio, 1);
-	    usleep_range(10, 20);
-	}
+	/*if (auo->te_gpio) {*/
+	    /*gpiod_set_value(auo->te_gpio, 1);*/
+	    /*usleep_range(10, 20);*/
+	/*}*/
 
 	if (auo->reset_gpio) {
 		gpiod_set_value(auo->reset_gpio, 1);
-		msleep(10);
+		msleep(20);
+		gpiod_set_value(auo->reset_gpio, 0);
+		msleep(200);
+		gpiod_set_value(auo->reset_gpio, 1);
 	}
 
-	msleep(150);
+	msleep(20);
 
 	ret = auo_panel_cabc_early_init(auo);
 	if (ret) {
@@ -2161,8 +2166,8 @@ poweroff:
 		dev_err(panel->dev, "failed to enable regulators, ret=%d\n", ret);
 	}
 
-	if (auo->enable_gpio)
-		gpiod_set_value(auo->enable_gpio, 0);
+	/*if (auo->enable_gpio)*/
+		/*gpiod_set_value(auo->enable_gpio, 0);*/
 
 	if (auo->reset_gpio)
 		gpiod_set_value(auo->reset_gpio, 0);
@@ -2260,28 +2265,28 @@ static int auo_panel_add(struct auo_panel *auo)
 	/*if (IS_ERR(auo->supply))*/
 		/*return PTR_ERR(auo->supply);*/
 
-	auo->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
-	if (IS_ERR(auo->enable_gpio)) {
-		ret = PTR_ERR(auo->enable_gpio);
-		dev_err(dev, "cannot get enable-gpio %d\n", ret);
-		return ret;
-	}
+	/*auo->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);*/
+	/*if (IS_ERR(auo->enable_gpio)) {*/
+		/*ret = PTR_ERR(auo->enable_gpio);*/
+		/*dev_err(dev, "cannot get enable-gpio %d\n", ret);*/
+		/*return ret;*/
+	/*}*/
 
-	auo->te_gpio = devm_gpiod_get(dev, "te", GPIOD_OUT_LOW);
-	if (IS_ERR(auo->te_gpio)) {
-		ret = PTR_ERR(auo->te_gpio);
-		dev_err(dev, "cannot get te-gpio %d\n", ret);
-		return ret;
-	}
+	/*auo->te_gpio = devm_gpiod_get(dev, "te", GPIOD_OUT_LOW);*/
+	/*if (IS_ERR(auo->te_gpio)) {*/
+		/*ret = PTR_ERR(auo->te_gpio);*/
+		/*dev_err(dev, "cannot get te-gpio %d\n", ret);*/
+		/*return ret;*/
+	/*}*/
 
-	auo->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
-	if (IS_ERR(auo->reset_gpio)) {
-		dev_err(dev, "cannot get reset-gpios %ld\n",
-			PTR_ERR(auo->reset_gpio));
-		auo->reset_gpio = NULL;
-	} else {
-		gpiod_direction_output(auo->reset_gpio, 0);
-	}
+	/*auo->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);*/
+	/*if (IS_ERR(auo->reset_gpio)) {*/
+		/*dev_err(dev, "cannot get reset-gpios %ld\n",*/
+			/*PTR_ERR(auo->reset_gpio));*/
+		/*auo->reset_gpio = NULL;*/
+	/*} else {*/
+		/*gpiod_direction_output(auo->reset_gpio, 0);*/
+	/*}*/
 
 	np = of_parse_phandle(dev->of_node, "backlight", 0);
 	if (np) {

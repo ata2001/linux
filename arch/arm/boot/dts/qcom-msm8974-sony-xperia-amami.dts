@@ -258,19 +258,19 @@
 		};
 	};
 
-	/*vreg_vsp: lcd-dcdc-regulator {*/
-		/*compatible = "regulator-fixed";*/
-		/*regulator-name = "vreg_vsp";*/
-		/*regulator-min-microvolt = <5600000>;*/
-		/*regulator-max-microvolt = <5600000>;*/
+        vreg_vsp: lcd-dcdc-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "vreg_vsp";
+                regulator-min-microvolt = <5600000>;
+                regulator-max-microvolt = <5600000>;
 
-		/*gpio = <&msmgpio 25 GPIO_ACTIVE_HIGH>;*/
-		/*enable-active-high;*/
+                gpio = <&msmgpio 58 GPIO_ACTIVE_HIGH>;
+                enable-active-high;
 
-		/*pinctrl-names = "default";*/
-		/*pinctrl-0 = <&lcd_en_pin_a>;*/
-		/*pinctrl-1 = <&lcd_en_pin_s>;*/
-	/*};*/
+                pinctrl-names = "default";
+                pinctrl-0 = <&lcd_en_pin_a>;
+                pinctrl-1 = <&lcd_en_pin_s>;
+        };
 };
 
 &soc {
@@ -375,7 +375,7 @@
 		};
 
                 lcd_en_pin_a: lcd-en-active {
-			pins = "gpio25";
+			pins = "gpio58";
 			function = "gpio";
 			drive-strength = <8>;
 			bias-disable;
@@ -383,7 +383,7 @@
 		};
 
 		lcd_en_pin_s: lcd-en-suspend {
-			pins = "gpio25";
+			pins = "gpio58";
 			function = "gpio";
 			drive-strength = <2>;
 			bias-pull-down;
@@ -582,10 +582,11 @@
                         /*vsp-supply = <&vreg_vsp>;*/
                         vdd-supply = <&pm8941_lvs3>;
                         vdda-supply = <&pm8941_l2>;
+                        vsp-supply = <&vreg_vsp>;
                         /*vddio-supply = <&pm8941_l12>;*/
-                        enable-gpios = <&msmgpio 58 GPIO_ACTIVE_HIGH>;
+                        /*enable-gpios = <&msmgpio 58 GPIO_ACTIVE_HIGH>;*/
                         te-gpios = <&msmgpio 12 0>;
-                        /*reset-gpios = <&pm8941_gpios 19 GPIO_ACTIVE_HIGH>;*/
+                        reset-gpios = <&pm8941_gpios 19 GPIO_ACTIVE_HIGH>;
                         backlight = <&wled>;
 
                         /*pinctrl-names = "default";*/
